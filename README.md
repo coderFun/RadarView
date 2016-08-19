@@ -1,3 +1,3 @@
 # RadarView
 an resource repository of radar view
-![RadarView.gif](https://github.com/coderFun/RadarView/master/art/rxmarkdown.gif)
+![RadarView.gif](https://raw.githubusercontent.com/coderFun/RadarView/master/art/demo.gif)
