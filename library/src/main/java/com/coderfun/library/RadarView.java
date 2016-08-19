@@ -11,12 +11,12 @@ import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.Shader;
 import android.graphics.SweepGradient;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -28,22 +28,32 @@ import java.util.Random;
  */
 public class RadarView extends View {
     public static final String TAG = "RadarView";
-    /** 设计稿-虚线半径 */
+    /** default total radius*/
     public static final int DEFAULT_TOTAL_RADIUS = 650;
-    /** 设计稿-内环半径 */
+    /** default radius of foreground ring */
     public static final int DEFAULT_INNER_RADIUS = 54;
-    /** 设计稿-中心裁剪圆半径 */
+    /** default radius of  */
     public static final int DEFAULT_CLIP_RADIUS = 32;
-    /** 设计稿雷达半径 */
+    /** default radius of radar */
     public static final int DEFAULT_RADAR_RADIUS = 600;
+    /** default radius of bitmap */
     public static final int DEFAULT_BITMAP_RADIUS = 80;
-    public static final int DEFAULT_BITMAP_DISTRIBUTION_RADIUS = 360;
+    /** default radius of bitmap orbit */
+    public static final int DEFAULT_BITMAP_ORBIT_RADIUS = 360;
+    /** default count of bitmap shown in view */
     public static final int DEFAULT_BITMAP_SHOW_COUNT = 3;
-    public static final int DEFAULT_BITMAP_TOTAL_COUNT = 5;
+    /** default total count of bitmap slots */
+    public static final int DEFAULT_BITMAP_SLOT_COUNT = 5;
+    /** default duration that radar scan one times */
     public static final int DEFAULT_DURATION = 3000;
+    /** default width of radar boundary */
     private static final int DEFAULT_RADAR_LINE_WIDTH = 4;
+    /** default width of radar scan line */
     private static final int DEFAULT_RADAR_RADIUS_LINE_WIDTH = 8;
+    
+    /** animator to control radar animation */
     ValueAnimator valueAnimator;
+    
     int currentStartIndex = 0;
     Random random = new Random();
     private List<Bitmap> totalBitmaps;
@@ -53,18 +63,21 @@ public class RadarView extends View {
     private float innerRadius;
     private float radarRadius;
     private float clipRadius;
-    private float bitmapDistributionRadius;
+    private float bitmapOrbitRadius;
     private int bitmapRadius;
     private float radarLineWidth;
     private float radarRadiusLineWidth;
     private Shader radarShader;
+    /** path use to clip the canvas */
     private Path clipPath;
     private Rect bitmapResRect;
     private Rect bitmapDstRect;
-    private int duration = DEFAULT_DURATION;
+    private int duration;
+    /** rotation the canvas to simulate radar scan */
     private int currentRotation;
     private int bitmapShowCount;
-    private int bitmapTotalCount;
+    private int bitmapSlotCount;
+    /** angle between two bitmaps */
     private double angle;
 
     public RadarView(Context context) {
@@ -86,14 +99,15 @@ public class RadarView extends View {
         paint.setDither(true);
         paint.setAntiAlias(true);
         paint.setFilterBitmap(true);
-        paint.setStrokeCap(Paint.Cap.BUTT);
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(Color.WHITE);
         clipPath = new Path();
         bitmapResRect = new Rect();
         bitmapDstRect = new Rect();
+        duration = DEFAULT_DURATION;
         bitmapShowCount = DEFAULT_BITMAP_SHOW_COUNT;
-        bitmapTotalCount = DEFAULT_BITMAP_TOTAL_COUNT;
-        angle = Math.PI * 2f / bitmapTotalCount;
+        bitmapSlotCount = DEFAULT_BITMAP_SLOT_COUNT;
+        angle = Math.PI * 2f / bitmapSlotCount;
 
         valueAnimator = ValueAnimator.ofInt(0, 360);
         valueAnimator.setDuration(duration);
@@ -123,7 +137,7 @@ public class RadarView extends View {
         clipRadius = ratio * DEFAULT_CLIP_RADIUS;
         radarLineWidth = ratio * DEFAULT_RADAR_LINE_WIDTH;
         radarRadiusLineWidth = ratio * DEFAULT_RADAR_RADIUS_LINE_WIDTH;
-        bitmapDistributionRadius = ratio * DEFAULT_BITMAP_DISTRIBUTION_RADIUS;
+        bitmapOrbitRadius = ratio * DEFAULT_BITMAP_ORBIT_RADIUS;
         bitmapRadius = (int) (ratio * DEFAULT_BITMAP_RADIUS);
         radarShader = new SweepGradient(centerX, centerY, new int[]{0x00ffffff, 0x00ffffff, 0xffffffff}, new float[]{0,
                 0.0f, 1});
@@ -173,27 +187,27 @@ public class RadarView extends View {
             return;
         }
         //起始角,显示图片范围的结束点,显示图片范围=这个角到线的角度
-        double startAngle = currentRotation / 360f * (Math.PI * 2f) + (this.bitmapTotalCount - bitmapShowCount) * angle;
+        double startAngle = currentRotation / 360f * (Math.PI * 2f) + (this.bitmapSlotCount - bitmapShowCount) * angle;
 
         int startIndex = 0;
         while (startAngle > startIndex * angle) {
             startIndex++;
         }
         if (currentStartIndex != startIndex) {
-            int randomIndex = random.nextInt(totalBitmaps.size() - bitmapTotalCount) + bitmapTotalCount;
-            Collections.swap(totalBitmaps, (currentStartIndex + bitmapShowCount) % bitmapTotalCount, randomIndex);
+            //int randomIndex = random.nextInt(totalBitmaps.size() - bitmapSlotCount) + bitmapSlotCount;
+            //Collections.swap(totalBitmaps, (currentStartIndex + bitmapShowCount) % bitmapSlotCount, randomIndex);
             currentStartIndex = startIndex;
         }
 
-
         for (int i = 0; i < bitmapShowCount; i++) {
             double cAngle = (startIndex + i) * angle;
-            Bitmap bitmap = totalBitmaps.get((startIndex + i) % bitmapTotalCount);
+            Bitmap bitmap = totalBitmaps.get((startIndex + i) % bitmapSlotCount);
             bitmapResRect.set(0, 0, bitmap.getWidth(), bitmap.getHeight());
-            int x = (int) (centerX + bitmapDistributionRadius * Math.cos(cAngle));
-            int y = (int) (centerY + bitmapDistributionRadius * Math.sin(cAngle));
+            int x = (int) (centerX + bitmapOrbitRadius * Math.cos(cAngle));
+            int y = (int) (centerY + bitmapOrbitRadius * Math.sin(cAngle));
             bitmapDstRect.set(x - bitmapRadius, y - bitmapRadius, x + bitmapRadius, y + bitmapRadius);
-            paint.setAlpha((int) (255 * Math.sin((cAngle - startAngle) * bitmapTotalCount / (2 * bitmapTotalCount - 4))));
+            //paint.setAlpha((int) (255 * Math.sin((cAngle - startAngle)*bitmapSlotCount/bitmapShowCount/2)));
+            paint.setAlpha((int) (255 * Math.sin(Math.pow((cAngle - startAngle)*bitmapSlotCount/bitmapShowCount,2)/4/Math.PI)));
             canvas.drawBitmap(bitmap, bitmapResRect, bitmapDstRect, paint);
         }
         paint.setAlpha(255);
@@ -208,7 +222,7 @@ public class RadarView extends View {
     private void drawRadar(Canvas canvas) {
         canvas.save();
         clipPath.reset();
-        clipPath.addCircle(centerX, centerY, innerRadius, Path.Direction.CW);
+        clipPath.addCircle(centerX, centerY, innerRadius-radarLineWidth, Path.Direction.CW);
         canvas.clipPath(clipPath, Region.Op.DIFFERENCE);
         paint.setShader(radarShader);
         canvas.rotate(currentRotation, centerX, centerY);
@@ -222,7 +236,7 @@ public class RadarView extends View {
         paint.setShader(null);
 
         paint.setStrokeWidth(radarRadiusLineWidth);
-        canvas.drawLine(centerX, centerY, centerX + radarRadius, centerY, paint);
+        canvas.drawLine(centerX, centerY, centerX + radarRadius-radarLineWidth/2, centerY, paint);
 
         canvas.restore();
     }
@@ -231,15 +245,37 @@ public class RadarView extends View {
         valueAnimator.start();
     }
 
-    public void setBitmaps(List<Bitmap> bitmaps) {
-        if (bitmaps.size() > bitmapTotalCount) {
+    /**
+     *
+     * @param bitmaps bitmaps show in radar
+     */
+    public void setBitmaps(@NonNull List<Bitmap> bitmaps) {
+        if (bitmaps.size() > bitmapSlotCount) {
             this.totalBitmaps = bitmaps;
         } else {
             totalBitmaps.clear();
             //need at least one more bitmap to random
-            for (int i = 0; i < bitmapTotalCount + 1; i++) {
+            for (int i = 0; i < bitmapSlotCount + 1; i++) {
                 this.totalBitmaps.add(bitmaps.get(i % bitmaps.size()));
             }
         }
     }
+
+    public RadarView setDuration(int duration) {
+        this.duration = duration;
+        valueAnimator.setDuration(duration);
+        return this;
+    }
+
+    public RadarView setBitmapShowCount(int bitmapShowCount) {
+        this.bitmapShowCount = bitmapShowCount;
+        return this;
+    }
+
+    public RadarView setBitmapSlotCount(int bitmapSlotCount) {
+        this.bitmapSlotCount = bitmapSlotCount;
+        angle = Math.PI * 2f / bitmapSlotCount;
+        return this;
+    }
+
 }
