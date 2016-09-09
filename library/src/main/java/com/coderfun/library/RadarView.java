@@ -173,7 +173,6 @@ public class RadarView extends View {
         radarRadiusLineWidth = ratio * DEFAULT_RADAR_RADIUS_LINE_WIDTH;
         bitmapOrbitRadius = ratio * DEFAULT_BITMAP_ORBIT_RADIUS;
         bitmapRadius = (int) (ratio * DEFAULT_BITMAP_RADIUS);
-        radarShader = new SweepGradient(centerX, centerY, Color.TRANSPARENT, Color.RED);
         radarShader = new SweepGradient(centerX, centerY, new int[]{0x00ffffff, 0x00ffffff, 0xffffffff}, new float[]{0,
                 0.0f, 1});
     }
