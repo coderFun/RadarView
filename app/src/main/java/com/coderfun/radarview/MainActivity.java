@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
         apps.add(BitmapFactory.decodeResource(getResources(),R.mipmap.app8));
         apps.add(BitmapFactory.decodeResource(getResources(),R.mipmap.app9));
         radarView.setBitmaps(apps);
-        radarView.setBitmapSlotCount(8).setBitmapShowCount(5).setDuration(4000);
+        radarView.setBitmapSlotCount(7).setBitmapShowCount(4).setDuration(4000);
         radarView.startRadarAnimation();
     }
 }

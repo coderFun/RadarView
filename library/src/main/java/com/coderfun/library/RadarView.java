@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -50,10 +51,10 @@ public class RadarView extends View {
     private static final int DEFAULT_RADAR_LINE_WIDTH = 4;
     /** default width of radar scan line */
     private static final int DEFAULT_RADAR_RADIUS_LINE_WIDTH = 8;
-    
+
     /** animator to control radar animation */
     ValueAnimator valueAnimator;
-    
+
     int currentStartIndex = 0;
     Random random = new Random();
     private List<Bitmap> totalBitmaps;
@@ -194,8 +195,8 @@ public class RadarView extends View {
             startIndex++;
         }
         if (currentStartIndex != startIndex) {
-            //int randomIndex = random.nextInt(totalBitmaps.size() - bitmapSlotCount) + bitmapSlotCount;
-            //Collections.swap(totalBitmaps, (currentStartIndex + bitmapShowCount) % bitmapSlotCount, randomIndex);
+            int randomIndex = random.nextInt(totalBitmaps.size() - bitmapSlotCount) + bitmapSlotCount;
+            Collections.swap(totalBitmaps, (currentStartIndex + bitmapShowCount) % bitmapSlotCount, randomIndex);
             currentStartIndex = startIndex;
         }
 
@@ -239,6 +240,12 @@ public class RadarView extends View {
         canvas.drawLine(centerX, centerY, centerX + radarRadius-radarLineWidth/2, centerY, paint);
 
         canvas.restore();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        valueAnimator.cancel();
     }
 
     public void startRadarAnimation() {
